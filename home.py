@@ -15,6 +15,7 @@ geographical_attribute = "HUC8"
 attribute_id = "26"
 substance_id = "31"
 
+"""Return a dictionary of all available locations with ID and Name attributes."""
 def get_locations():
         # Monitoring Location
         attribute_ids = requests.get('https://data.chesapeakebay.net/api.json/' + geographical_attribute)
@@ -29,7 +30,9 @@ def get_locations():
             locations.append(dict(id = current_location_id, name = current_location_name))
         return(locations)
 
+"""Load the home page."""
 def home_page():
+        # UI Setup
         root = tk.Tk()
         root.geometry("500x500")
         root.title("Chesapeake Checkup")
@@ -39,6 +42,8 @@ def home_page():
 
         selected_location = tk.StringVar()
         location_cb = ttk.Combobox(root, values=selected_location)
+        
+        # Populate combobox with locations sorted by name
         available_locations = get_locations()
         location_names = []
         for location in available_locations:
