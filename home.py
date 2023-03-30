@@ -1,5 +1,6 @@
 import tkinter as tk
 from tkinter import ttk
+from PIL import Image, ImageTk
 import requests, json
 
 # Config Variables
@@ -28,30 +29,51 @@ def get_locations():
             current_location_id = attribute[attribute_id]
             current_location_name = attribute[attribute_name]
             locations.append(dict(id = current_location_id, name = current_location_name))
-        return(locations)
+        return locations
+
+def get_location_names(available_locations):
+        available_locations = get_locations()
+        location_names = []
+        for location in available_locations:
+              location_names.append(location['name'])
+        return location_names
 
 """Load the home page."""
 def home_page():
-        # UI Setup
+        # Initialize Home Window Elements
         root = tk.Tk()
+
+        #Set a logo later
+        # root.iconbitmap("favicon.ico")
+        
         root.geometry("500x500")
         root.title("Chesapeake Checkup")
+
+        select_location_frame = tk.Frame(root)
 
         label = tk.Label(root, text="Chesapeake Checkup", font=('Arial', 24))
         label.pack(padx=20, pady=20)
 
         selected_location = tk.StringVar()
-        location_cb = ttk.Combobox(root, values=selected_location)
+        location_cb = ttk.Combobox(select_location_frame, textvariable=selected_location, state="readonly")
         
         # Populate combobox with locations sorted by name
         available_locations = get_locations()
-        location_names = []
-        for location in available_locations:
-              location_names.append(location['name'])
-        
+        location_names = get_location_names(available_locations)
         location_names.sort()
         location_cb['values'] = location_names
-        location_cb.pack()
+        location_cb.set('Select a Watershed')
+        location_cb.pack(side=tk.LEFT, padx=5)
+
+        """ Create a function to read the combobox every time it is edited and suggest autofill options as the user types.
+            Also set the default value again every time it is blank.
+        """
+
+        select_location_btn = tk.Button(select_location_frame, text = 'Select Watershed')
+        select_location_btn.pack(side=tk.LEFT, padx=5)
+
+        select_location_frame.pack()
+        
 
         root.mainloop()
 
