@@ -3,19 +3,20 @@ from tkinter import ttk
 
 # from PIL import Image, ImageTk # For icon and images later
 import requests, json
+from datetime import date
 
 # Config Variables
 section = "WaterQuality"
 subsection = "WaterQuality"
 
 start_date = "2-21-2022"
-end_date = "2-21-2023"
+end_date = date.today().strftime('%#m-%#d-%Y')
 data_stream_data = "0,1"
 program_id = "2,4,6"
 project_id = "12,13,15,35,36,2,3,7,33,34,23,24"
 geographical_attribute = "HUC8"
 attribute_id = "26"
-substance_id = "31"
+substance_ids = "123,31,73,104,105"
 
 # Font Constants
 FONT = "Calibri"
@@ -53,6 +54,9 @@ def get_location_names(available_locations):
     for location in available_locations:
         location_names.append(location["name"])
     return location_names
+
+def get_data():
+    pass
 
 def home_window():
     """Load the home page."""
@@ -105,8 +109,36 @@ def stats_window():
     
     recent_measurements_frame = tk.Frame(stats_window)
     measurements_label = tk.Label(recent_measurements_frame, text="Recent Measurements:", font=LABEL_FONT)
-    # measurements_lable.place(relx=25)
+
     measurements_label.pack()
+    url = 'https://datahub.chesapeakebay.net/api.JSON/' + section + '/' + subsection +'/' + start_date + '/' + end_date + '/' + data_stream_data + '/' + program_id + '/' + project_id + '/' + geographical_attribute +'/' + attribute_id + '/' + substance_ids
+    # print(url)
+    water_quality = requests.get(url)
+    
+    water_quality_data = json.loads(water_quality.text)
+    
+    latest_data = {}
+    
+    for sample in water_quality_data:
+        # current_data = {"Parameter":sample["Parameter"], "MeasureValue":sample["MeasureValue"], "SampleDate":sample["SampleDate"]}
+        parameter = sample["Parameter"]
+        if parameter not in latest_data.keys():
+            latest_data[parameter] = sample
+        else:
+            if sample["SampleDate"] > latest_data[parameter]["SampleDate"]:
+                latest_data[parameter] = sample
+    print(latest_data)
+        # for data in latest_data:
+        #     if (data["Parameter"] == current_data["Parameter"]) and (data["SampleDate"] > current_data["SampleDate"]):
+        #         latest_data.append(current_data)
+                
+        # if (relavent_data["Parameter"] not in latest_data):
+        #     latest_data.append(relavent_data)
+    # print(water_quality_data)
+    # print(latest_data)
+
+    
+    
     recent_measurements_frame.pack(side=tk.LEFT, anchor=tk.NW, padx=20)
     
     
