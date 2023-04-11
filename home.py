@@ -9,7 +9,7 @@ from datetime import date
 section = "WaterQuality"
 subsection = "WaterQuality"
 
-start_date = "2-21-2022"
+start_date = "2-21-2020"
 end_date = date.today().strftime('%#m-%#d-%Y')
 data_stream_data = "0,1"
 program_id = "2,4,6"
@@ -76,6 +76,21 @@ def get_latest_data(water_quality_data):
             if sample["SampleDate"] > latest_data[parameter]["SampleDate"]:
                 latest_data[parameter] = sample
     return(latest_data)
+
+def get_substance_description(substance_name):
+    """Get the full description of a substance from its name"""
+    
+    substances = requests.get('https://data.chesapeakebay.net/api.json/Substances')
+    substance_data = json.loads(substances.text)
+    
+    for substance in substance_data:
+            if substance["SubstanceIdentificationName"] == substance_name:
+                # print(substance["SubstanceIdentificationDescription"])
+                return(substance["SubstanceIdentificationDescription"])
+    
+    print("SUBSTANCE" + substance_name + "NOT FOUND:")
+    return "error"
+                # print(substance["SubstanceIdentificationDescription"] + ':', latest_data[key]["MeasureValue"], latest_data[key]["Unit"], '(' + latest_data[key]["SampleDate"] + ')')
 
 def get_parameter_info(parameter):
     """Get name and definition of each parameter"""
@@ -148,14 +163,21 @@ def stats_window():
     water_quality_data = json.loads(water_quality.text)
     
     latest_data = get_latest_data(water_quality_data)
-    
+    print(location_name + ":")
     for key in latest_data:
-        print(key + ':', latest_data[key]["MeasureValue"], latest_data[key]["Unit"], '(' + latest_data[key]["SampleDate"] + ')')
+        substance_desc = get_substance_description(key)
+        print(substance_desc + ':', latest_data[key]["MeasureValue"], latest_data[key]["Unit"], '(' + latest_data[key]["SampleDate"] + ')')
         
+        
+            
     """
     Create a loop that adds these as elements instead of printing them in the console.
     Then, write a function that gets the full name and description of each parameter.
     """
+    
+    
+    
+    
     
     recent_measurements_frame.pack(side=tk.LEFT, anchor=tk.NW, padx=20)
     
