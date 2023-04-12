@@ -8,6 +8,9 @@
 - Add graph on stats window.
 - Add descriptions of each parameter as popups.
 - Prevent a new window from opening if the last window that was opened has the same location name.
+- Add a way for the user to toggle the upload dates on and off for a substance (these aren't always the same for a location)
+- Add a way for the user to choose how far back they want the data to go (more time = more delay when making calls)
+    - Create an error message to tell users that "this location has no data in the selected timeframe"
 
 ### In Progress ···
 - Fix the sizing of the page
