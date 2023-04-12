@@ -9,13 +9,13 @@ from datetime import date
 section = "WaterQuality"
 subsection = "WaterQuality"
 
-start_date = "2-21-2020"
+start_date = "2-21-2021"
 end_date = date.today().strftime('%#m-%#d-%Y')
 data_stream_data = "0,1"
 program_id = "2,4,6"
 project_id = "12,13,15,35,36,2,3,7,33,34,23,24"
 geographical_attribute = "HUC8"
-attribute_id = "26"
+# attribute_id = "26"
 substance_ids = "123,31,73,104,105"
 
 # Font Constants
@@ -35,15 +35,19 @@ selected_location_name = tk.StringVar()
 def get_locations():
     """Return a dictionary of all available locations with ID and Name attributes."""
     # Monitoring Location
-    attribute_ids = requests.get("https://data.chesapeakebay.net/api.json/" + geographical_attribute)
+    attribute_ids = requests.get('https://data.chesapeakebay.net/api.JSON/WaterQuality/Station/HUC8/') #"https://data.chesapeakebay.net/api.json/" + geographical_attribute)
     attribute_data = json.loads(attribute_ids.text)
-    attribute_name = geographical_attribute + "Name"
-    attribute_id = geographical_attribute + "Id"
+    attribute_name = geographical_attribute + "Description"
+    
+    # FIND A WAY TO MAKE A CONSTANT FOR THIS IN CASE USER WANTS TO CHANGE THIS LATER IN SETTINGS PAGE 
+    attribute_id = 'HUCEightId' # geographical_attribute + "Id"
+    
     # Get location ID and name for each location, append it to list
     locations = []
     for attribute in attribute_data:
         current_location_id = attribute[attribute_id]
         current_location_name = attribute[attribute_name]
+        
         locations.append(dict(id=current_location_id, name=current_location_name))
     return locations
 
@@ -90,11 +94,6 @@ def get_substance_description(substance_name):
     
     print("SUBSTANCE" + substance_name + "NOT FOUND:")
     return "error"
-                # print(substance["SubstanceIdentificationDescription"] + ':', latest_data[key]["MeasureValue"], latest_data[key]["Unit"], '(' + latest_data[key]["SampleDate"] + ')')
-
-def get_parameter_info(parameter):
-    """Get name and definition of each parameter"""
-    pass
 
 def home_window():
     """Load the home page."""
@@ -174,10 +173,6 @@ def stats_window():
     Create a loop that adds these as elements instead of printing them in the console.
     Then, write a function that gets the full name and description of each parameter.
     """
-    
-    
-    
-    
     
     recent_measurements_frame.pack(side=tk.LEFT, anchor=tk.NW, padx=20)
     
