@@ -9,7 +9,7 @@ from datetime import date
 section = "WaterQuality"
 subsection = "WaterQuality"
 
-start_date = "2-21-2021"
+start_date = "1-1-2019"
 end_date = date.today().strftime('%#m-%#d-%Y')
 data_stream_data = "0,1"
 program_id = "2,4,6"
@@ -26,6 +26,7 @@ BUTTON_SIZE = 10
 BUTTON_FONT = (FONT, BUTTON_SIZE)
 LABLE_SIZE = 16
 LABEL_FONT = (FONT, LABLE_SIZE)
+
 
 root = tk.Tk()
 # Location selected from main window combobox
@@ -151,10 +152,13 @@ def stats_window():
     
     location_id = str(get_location_id(location_name))
     
-    recent_measurements_frame = tk.Frame(stats_window)
-    measurements_label = tk.Label(recent_measurements_frame, text="Recent Measurements:", font=LABEL_FONT)
+    recent_measurements_label_frame = tk.LabelFrame(stats_window, text="Recent Measurements:", font=LABEL_FONT)
+    # measurements_label = tk.Label(recent_measurements_label_frame, text="Recent Measurements:", font=LABEL_FONT)
 
-    measurements_label.pack()
+    # measurements_label.pack(side=tk.LEFT)
+    
+    
+    # substance_label_frame = tk.LabelFrame(stats_window, text="Recent Measurements")
     
     url = 'https://datahub.chesapeakebay.net/api.JSON/' + section + '/' + subsection +'/' + start_date + '/' + end_date + '/' + data_stream_data + '/' + program_id + '/' + project_id + '/' + geographical_attribute +'/' + location_id + '/' + substance_ids
 
@@ -165,7 +169,14 @@ def stats_window():
     print(location_name + ":")
     for key in latest_data:
         substance_desc = get_substance_description(key)
-        print(substance_desc + ':', latest_data[key]["MeasureValue"], latest_data[key]["Unit"], '(' + latest_data[key]["SampleDate"] + ')')
+        substance_label_text = substance_desc + ':', latest_data[key]["MeasureValue"], latest_data[key]["Unit"], '(' + latest_data[key]["SampleDate"] + ')'
+        print(substance_label_text)
+        substance_label = tk.Label(recent_measurements_label_frame, text=substance_label_text, font=LABEL_FONT)
+        substance_label.pack()
+        
+    # substance_label_frame.pack()
+    
+    recent_measurements_label_frame.pack(side=tk.LEFT, anchor=tk.NW, padx=20)
         
         
             
@@ -174,7 +185,7 @@ def stats_window():
     Then, write a function that gets the full name and description of each parameter.
     """
     
-    recent_measurements_frame.pack(side=tk.LEFT, anchor=tk.NW, padx=20)
+    
     
     
 
