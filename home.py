@@ -26,6 +26,9 @@ BUTTON_SIZE = 10
 BUTTON_FONT = (FONT, BUTTON_SIZE)
 LABLE_SIZE = 16
 LABEL_FONT = (FONT, LABLE_SIZE)
+SUBSTANCE_FONT_SIZE = 12
+SUBSTANCE_FONT = (FONT, SUBSTANCE_FONT_SIZE, 'bold') 
+SUBSTANCE_CONTENT_FONT = (FONT, SUBSTANCE_FONT_SIZE)
 
 
 root = tk.Tk()
@@ -168,11 +171,18 @@ def stats_window():
     latest_data = get_latest_data(water_quality_data)
     print(location_name + ":")
     for key in latest_data:
+        current_substance_frame = tk.Frame(recent_measurements_label_frame)
+        
         substance_desc = get_substance_description(key)
-        substance_label_text = substance_desc + ':', latest_data[key]["MeasureValue"], latest_data[key]["Unit"], '(' + latest_data[key]["SampleDate"] + ')'
-        print(substance_label_text)
-        substance_label = tk.Label(recent_measurements_label_frame, text=substance_label_text, font=LABEL_FONT)
-        substance_label.pack()
+        substance_label_title_content = substance_desc + ':'
+        substance_label_content = latest_data[key]["MeasureValue"], latest_data[key]["Unit"] # , '(' + latest_data[key]["SampleDate"] + ')'
+        print(substance_label_content)
+        substance_label_title = tk.Label(current_substance_frame, text=substance_label_title_content, font=SUBSTANCE_FONT)
+        substance_label = tk.Label(current_substance_frame, text=substance_label_content, font=SUBSTANCE_CONTENT_FONT)
+        substance_label_title.pack(side=tk.LEFT)
+        substance_label.pack(side=tk.LEFT)
+        
+        current_substance_frame.pack()
         
     # substance_label_frame.pack()
     
