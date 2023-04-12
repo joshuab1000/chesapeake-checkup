@@ -10,7 +10,6 @@
 - Prevent a new window from opening if the last window that was opened has the same location name.
 
 ### In Progress ···
-- Figure out why temperature is being displayed in brackets
 - Fix the sizing of the page
 - Align all the labels, probably to the left
 
@@ -21,3 +20,4 @@
 - Open new window when select button is pressed.
 - Create a loop that adds substances as elements instead of printing them in the console.
 - Write a function that gets the full name and description of each parameter.
+- Fix temperature being displayed in brackets

@@ -175,7 +175,7 @@ def stats_window():
         
         substance_desc = get_substance_description(key)
         substance_label_title_content = substance_desc + ':'
-        substance_label_content = latest_data[key]["MeasureValue"], latest_data[key]["Unit"] # , '(' + latest_data[key]["SampleDate"] + ')'
+        substance_label_content = str(latest_data[key]["MeasureValue"]) + ' ' + str(latest_data[key]["Unit"]) # , '(' + latest_data[key]["SampleDate"] + ')'
         print(substance_label_content)
         substance_label_title = tk.Label(current_substance_frame, text=substance_label_title_content, font=SUBSTANCE_FONT)
         substance_label = tk.Label(current_substance_frame, text=substance_label_content, font=SUBSTANCE_CONTENT_FONT)
