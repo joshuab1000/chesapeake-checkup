@@ -147,7 +147,7 @@ def stats_window():
     stats_window = tk.Toplevel(root)
     location_name = selected_location_name.get()
     
-    stats_window.geometry("500x600")
+    stats_window.geometry("450x600")
     stats_window.title(location_name)
     # Create a Label in New window
     title = tk.Label(stats_window, text=location_name, font=TITLE_FONT)
@@ -157,10 +157,7 @@ def stats_window():
     
     recent_measurements_label_frame = tk.LabelFrame(stats_window, text="Recent Measurements:", font=LABEL_FONT)
     # measurements_label = tk.Label(recent_measurements_label_frame, text="Recent Measurements:", font=LABEL_FONT)
-
     # measurements_label.pack(side=tk.LEFT)
-    
-    
     # substance_label_frame = tk.LabelFrame(stats_window, text="Recent Measurements")
     
     url = 'https://datahub.chesapeakebay.net/api.JSON/' + section + '/' + subsection +'/' + start_date + '/' + end_date + '/' + data_stream_data + '/' + program_id + '/' + project_id + '/' + geographical_attribute +'/' + location_id + '/' + substance_ids
@@ -176,28 +173,23 @@ def stats_window():
         substance_desc = get_substance_description(key)
         substance_label_title_content = substance_desc + ':'
         substance_label_content = str(latest_data[key]["MeasureValue"]) + ' ' + str(latest_data[key]["Unit"]) # , '(' + latest_data[key]["SampleDate"] + ')'
-        print(substance_label_content)
+        # print(substance_label_content)
         substance_label_title = tk.Label(current_substance_frame, text=substance_label_title_content, font=SUBSTANCE_FONT)
         substance_label = tk.Label(current_substance_frame, text=substance_label_content, font=SUBSTANCE_CONTENT_FONT)
         substance_label_title.pack(side=tk.LEFT)
         substance_label.pack(side=tk.LEFT)
         
         current_substance_frame.pack()
-        
     # substance_label_frame.pack()
     
-    recent_measurements_label_frame.pack(side=tk.LEFT, anchor=tk.NW, padx=20)
-        
-        
-            
+    recent_measurements_label_frame.pack(padx=20)
+
+
     """
     Create a loop that adds these as elements instead of printing them in the console.
     Then, write a function that gets the full name and description of each parameter.
     """
-    
-    
-    
-    
+
 
 def main():
     home_window()
