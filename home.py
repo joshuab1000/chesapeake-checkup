@@ -4,6 +4,9 @@ from tkinter import ttk
 # from PIL import Image, ImageTk # For icon and images later
 import requests, json
 from datetime import date
+import pandas as pd
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 # Config Variables
 section = "WaterQuality"
@@ -166,7 +169,7 @@ def stats_window():
     water_quality_data = json.loads(water_quality.text)
     
     latest_data = get_latest_data(water_quality_data)
-    print(location_name + ":")
+    # print(location_name + ":")
     for key in latest_data:
         current_substance_frame = tk.Frame(recent_measurements_label_frame)
         
@@ -183,6 +186,22 @@ def stats_window():
     # substance_label_frame.pack()
     
     recent_measurements_label_frame.pack(padx=20)
+    
+    data = {'year': [1900, 1910, 1920, 1930, 1940, 1950, 1960, 1970, 1980, 1990, 2000],
+            'ph': [7, 8, 6, 5, 7, 10, 9, 3, 2, 7, 8]}
+    
+    dataframe = pd.DataFrame(data)
+    figure = plt.Figure(figsize=(3,3), dpi=100) #figsize in inches
+    figure_plot = figure.add_subplot(1, 1, 1) # num of rows, num of columns, index position
+    figure_plot.set_ylabel('pH Level')
+    line_graph = FigureCanvasTkAgg(figure, stats_window)
+    line_graph.get_tk_widget().pack( fill=tk.BOTH)
+    dataframe = dataframe[['year', 'ph']].groupby('year').sum()
+    dataframe.plot(kind='line', legend=True, ax=figure_plot, color='r', marker='o', fontsize=10)
+    figure_plot.set_title('Year vs pH Level')
+ 
+    # To show the plot
+    plt.show()
 
 
     """
