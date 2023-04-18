@@ -37,6 +37,8 @@ SUBSTANCE_CONTENT_FONT = (FONT, SUBSTANCE_FONT_SIZE)
 root = tk.Tk()
 # Location selected from main window combobox
 selected_location_name = tk.StringVar()
+# Metric selected from stats window combobox
+selected_metric = tk.StringVar()
 # available_locations = []
 
 def get_locations():
@@ -168,51 +170,69 @@ def stats_window():
     water_quality = requests.get(url)
     water_quality_data = json.loads(water_quality.text)
     
+    # print(water_quality_data)
+    
+    metric_names = []
+    
     latest_data = get_latest_data(water_quality_data)
+    
     # print(location_name + ":")
     for key in latest_data:
+        # Frame for each substance label
         current_substance_frame = tk.Frame(recent_measurements_label_frame)
         
         substance_desc = get_substance_description(key)
         substance_label_title_content = substance_desc + ':'
         substance_label_content = str(latest_data[key]["MeasureValue"]) + ' ' + str(latest_data[key]["Unit"]) # , '(' + latest_data[key]["SampleDate"] + ')'
-        # print(substance_label_content)
         substance_label_title = tk.Label(current_substance_frame, text=substance_label_title_content, font=SUBSTANCE_FONT)
         substance_label = tk.Label(current_substance_frame, text=substance_label_content, font=SUBSTANCE_CONTENT_FONT)
         substance_label_title.pack(side=tk.LEFT)
         substance_label.pack(side=tk.LEFT)
         
+        #Save this key in a list that we can use for our selection combobox later
+        metric_names.append(substance_desc)
+        
         current_substance_frame.pack()
-    # substance_label_frame.pack()
     
-    recent_measurements_label_frame.pack(padx=20)
+    recent_measurements_label_frame.pack(padx=20, pady=20)
+    
+    # Create a combobox for selecting the metric that will be graphed.
+    select_metric_frame = tk.Frame(stats_window)
+    
+    select_metric_label = tk.Label(select_metric_frame, text="Select a Metric to Graph Over Time:", font=BUTTON_FONT)
+    select_metric_label.pack(side=tk.TOP, anchor=tk.NW)
+    
+    
+    metric_cb = ttk.Combobox(select_metric_frame, textvariable=selected_metric, state="readonly", font=BUTTON_FONT)
+    metric_names.sort()
+    metric_cb["values"] = metric_names
+    metric_cb.pack(side=tk.LEFT, padx=5)
+    metric_cb.set("Select a Metric")
+    
+    select_metric_frame.pack()
+    
+    plot_frame = tk.Frame(stats_window)
     
     data = {'year': [1900, 1910, 1920, 1930, 1940, 1950, 1960, 1970, 1980, 1990, 2000],
             'ph': [7, 8, 6, 5, 7, 10, 9, 3, 2, 7, 8]}
     
     dataframe = pd.DataFrame(data)
-    figure = plt.Figure(figsize=(3,3), dpi=100) #figsize in inches
+    figure = plt.Figure(figsize=(4,4), dpi=100) #figsize in inches
     figure_plot = figure.add_subplot(1, 1, 1) # num of rows, num of columns, index position
     figure_plot.set_ylabel('pH Level')
-    line_graph = FigureCanvasTkAgg(figure, stats_window)
-    line_graph.get_tk_widget().pack( fill=tk.BOTH)
+    line_graph = FigureCanvasTkAgg(figure, plot_frame)
+    line_graph.get_tk_widget().pack( fill=tk.BOTH )
     dataframe = dataframe[['year', 'ph']].groupby('year').sum()
     dataframe.plot(kind='line', legend=True, ax=figure_plot, color='r', marker='o', fontsize=10)
     figure_plot.set_title('Year vs pH Level')
  
     # To show the plot
     plt.show()
-
-
-    """
-    Create a loop that adds these as elements instead of printing them in the console.
-    Then, write a function that gets the full name and description of each parameter.
-    """
-
+    
+    plot_frame.pack(pady=20)
 
 def main():
     home_window()
-
 
 if __name__ == "__main__":
     main()
