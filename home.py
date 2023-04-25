@@ -1,6 +1,5 @@
 import tkinter as tk
 from tkinter import ttk
-
 # from PIL import Image, ImageTk # For icon and images later
 import requests, json
 from datetime import date
@@ -21,7 +20,7 @@ geographical_attribute = "HUC8"
 # attribute_id = "26"
 substance_ids = "123,31,73,104,105"
 
-# Font Constants
+# Font Constants:
 FONT = "Calibri"
 TITLE_SIZE = 24
 TITLE_FONT = (FONT, TITLE_SIZE)
@@ -32,14 +31,15 @@ LABEL_FONT = (FONT, LABLE_SIZE)
 SUBSTANCE_FONT_SIZE = 12
 SUBSTANCE_FONT = (FONT, SUBSTANCE_FONT_SIZE, 'bold') 
 SUBSTANCE_CONTENT_FONT = (FONT, SUBSTANCE_FONT_SIZE)
+plt.rcParams["font.family"] = FONT
 
-
+# Global variables:
+# Create the root tkinter frame
 root = tk.Tk()
 # Location selected from main window combobox
 selected_location_name = tk.StringVar()
 # Metric selected from stats window combobox
 selected_metric = tk.StringVar()
-# available_locations = []
 
 def get_locations():
     """Return a dictionary of all available locations with ID and Name attributes."""
@@ -60,7 +60,6 @@ def get_locations():
         locations.append(dict(id=current_location_id, name=current_location_name))
     return locations
 
-
 def get_location_names(available_locations):
     """Get the names of locations from a list of available locations"""
     available_locations = get_locations()
@@ -79,9 +78,7 @@ def get_location_id(location_name):
 def get_latest_data(water_quality_data):
     """Get the most recently uploaded data, return it as a list of dictionaries with paramaters as the keys"""
     latest_data = {}
-    
     for sample in water_quality_data:
-        # current_data = {"Parameter":sample["Parameter"], "MeasureValue":sample["MeasureValue"], "SampleDate":sample["SampleDate"]}
         parameter = sample["Parameter"]
         if parameter not in latest_data.keys():
             latest_data[parameter] = sample
@@ -92,17 +89,47 @@ def get_latest_data(water_quality_data):
 
 def get_substance_description(substance_name):
     """Get the full description of a substance from its name"""
-    
     substances = requests.get('https://data.chesapeakebay.net/api.json/Substances')
     substance_data = json.loads(substances.text)
     
-    for substance in substance_data:
-            if substance["SubstanceIdentificationName"] == substance_name:
-                # print(substance["SubstanceIdentificationDescription"])
-                return(substance["SubstanceIdentificationDescription"])
+    substance_data_frame = pd.DataFrame(substance_data)
+    substance_description = substance_data_frame.loc[substance_data_frame['SubstanceIdentificationName'] == substance_name]['SubstanceIdentificationDescription']
+    return(substance_description.values[0])
+
+def get_substance_name(substance_description):
+    """Get the substance name abbreviation from its full description"""
+    substances = requests.get('https://data.chesapeakebay.net/api.json/Substances')
+    substance_data = json.loads(substances.text)
     
-    print("SUBSTANCE" + substance_name + "NOT FOUND:")
-    return "error"
+    substance_data_frame = pd.DataFrame(substance_data)
+    substance_description = substance_data_frame.loc[substance_data_frame['SubstanceIdentificationDescription'] == substance_description]['SubstanceIdentificationName']
+    return(substance_description.values[0])
+
+def update_graph_on_change(monthly_averages, frame):
+    """Update stats window plot every time a new metric is chosen. """
+    # Clear out the frame (and any previous plots in it)
+    for widget in frame.winfo_children():
+        widget.destroy()
+    
+    # Generate the new graph
+    plot_frame = tk.Frame(frame)
+    substance_description = selected_metric.get()
+    substance_name = get_substance_name(substance_description)
+    # monthly_averages.to_html('temp.html')
+    data = monthly_averages.loc[substance_name, :].tail(12)
+    
+    figure = plt.Figure(figsize=(5,5), dpi=100) #figure size in inches
+    figure_plot = figure.add_subplot(1, 1, 1) # num of rows, num of columns, index position
+    figure_plot.set_ylabel(substance_description)
+    line_graph = FigureCanvasTkAgg(figure, plot_frame)
+    line_graph.get_tk_widget().pack( fill=tk.BOTH )
+    data.plot(kind='line', legend=False, ax=figure_plot, color='b', marker='o', fontsize=10)
+    figure_plot.set_title(('Monthly Average ' + substance_name + ' Over the Last Year'))
+ 
+    # Show the plot
+    plt.show()
+    plot_frame.pack()
+    frame.pack(pady=10)
 
 def home_window():
     """Load the home page."""
@@ -132,11 +159,8 @@ def home_window():
     location_cb.set("Select a Watershed")
     location_cb.pack(side=tk.LEFT, padx=5)
 
-    # print(available_locations[selected_location_name]["id"])
-
-    # available_locations[selected_location_name]
-
     """
+        For the future:
         Create a function to read the combobox every time it is edited and suggest autofill options as the user types.
         Also set the default value again every time it is blank.
     """
@@ -152,7 +176,7 @@ def stats_window():
     stats_window = tk.Toplevel(root)
     location_name = selected_location_name.get()
     
-    stats_window.geometry("450x600")
+    stats_window.geometry("500x600")
     stats_window.title(location_name)
     # Create a Label in New window
     title = tk.Label(stats_window, text=location_name, font=TITLE_FONT)
@@ -161,16 +185,11 @@ def stats_window():
     location_id = str(get_location_id(location_name))
     
     recent_measurements_label_frame = tk.LabelFrame(stats_window, text="Recent Measurements:", font=LABEL_FONT)
-    # measurements_label = tk.Label(recent_measurements_label_frame, text="Recent Measurements:", font=LABEL_FONT)
-    # measurements_label.pack(side=tk.LEFT)
-    # substance_label_frame = tk.LabelFrame(stats_window, text="Recent Measurements")
     
     url = 'https://datahub.chesapeakebay.net/api.JSON/' + section + '/' + subsection +'/' + start_date + '/' + end_date + '/' + data_stream_data + '/' + program_id + '/' + project_id + '/' + geographical_attribute +'/' + location_id + '/' + substance_ids
 
     water_quality = requests.get(url)
     water_quality_data = json.loads(water_quality.text)
-    
-    # print(water_quality_data)
     
     metric_names = []
     
@@ -194,43 +213,34 @@ def stats_window():
         
         current_substance_frame.pack()
     
-    recent_measurements_label_frame.pack(padx=20, pady=20)
+    recent_measurements_label_frame.pack(padx=20, pady=5)
     
     # Create a combobox for selecting the metric that will be graphed.
     select_metric_frame = tk.Frame(stats_window)
     
     select_metric_label = tk.Label(select_metric_frame, text="Select a Metric to Graph Over Time:", font=BUTTON_FONT)
     select_metric_label.pack(side=tk.TOP, anchor=tk.NW)
-    
-    
+
     metric_cb = ttk.Combobox(select_metric_frame, textvariable=selected_metric, state="readonly", font=BUTTON_FONT)
     metric_names.sort()
     metric_cb["values"] = metric_names
-    metric_cb.pack(side=tk.LEFT, padx=5)
+
+    metric_cb.pack(side=tk.LEFT, padx=10)
     metric_cb.set("Select a Metric")
     
-    select_metric_frame.pack()
+    select_metric_frame.pack(pady=5)
     
-    plot_frame = tk.Frame(stats_window)
+    # Store data in a dataframe to be plotted
+    data_frame = pd.DataFrame(water_quality_data)
+    data_frame = data_frame[["Parameter", "MeasureValue", "Unit", "SampleDate"]]
+    data_frame["SampleDate"] = pd.to_datetime(data_frame["SampleDate"], format="%Y-%m-%dT%H:%M:%S")
+    monthly_averages = pd.DataFrame(data_frame.groupby(['Parameter', pd.Grouper(key='SampleDate', freq='M')])['MeasureValue'].mean())
     
-    data = {'year': [1900, 1910, 1920, 1930, 1940, 1950, 1960, 1970, 1980, 1990, 2000],
-            'ph': [7, 8, 6, 5, 7, 10, 9, 3, 2, 7, 8]}
+    plot_frame_wrapper = tk.Frame(stats_window)
     
-    dataframe = pd.DataFrame(data)
-    figure = plt.Figure(figsize=(4,4), dpi=100) #figsize in inches
-    figure_plot = figure.add_subplot(1, 1, 1) # num of rows, num of columns, index position
-    figure_plot.set_ylabel('pH Level')
-    line_graph = FigureCanvasTkAgg(figure, plot_frame)
-    line_graph.get_tk_widget().pack( fill=tk.BOTH )
-    dataframe = dataframe[['year', 'ph']].groupby('year').sum()
-    dataframe.plot(kind='line', legend=True, ax=figure_plot, color='r', marker='o', fontsize=10)
-    figure_plot.set_title('Year vs pH Level')
- 
-    # To show the plot
-    plt.show()
+    # On combobox change, update the graph
+    metric_cb.bind('<<ComboboxSelected>>', lambda event: update_graph_on_change(monthly_averages, plot_frame_wrapper))
     
-    plot_frame.pack(pady=20)
-
 def main():
     home_window()
 
