@@ -1,16 +1,19 @@
 import tkinter as tk
 from tkinter import ttk
+
 # from PIL import Image, ImageTk # For icon and images later
-import requests, json
-from datetime import date
+import requests, json, tkintermapview
+from datetime import date, datetime
 import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from idlelib.tooltip import Hovertip
+# from ttkwidgets.frames import Balloon
+# from ttkwidgets.frames import AutocompleteCombobox
 
 # Config Variables
 section = "WaterQuality"
 subsection = "WaterQuality"
-
 start_date = "1-1-2019"
 end_date = date.today().strftime('%#m-%#d-%Y')
 data_stream_data = "0,1"
@@ -36,10 +39,15 @@ plt.rcParams["font.family"] = FONT
 # Global variables:
 # Create the root tkinter frame
 root = tk.Tk()
+
+home_window_icon = tk.PhotoImage(file="icons/bluecrab.png")
+# stats_window_icon = tk.PhotoImage(file="icons/crab.png")
+
 # Location selected from main window combobox
 selected_location_name = tk.StringVar()
 # Metric selected from stats window combobox
 selected_metric = tk.StringVar()
+
 
 def get_locations():
     """Return a dictionary of all available locations with ID and Name attributes."""
@@ -105,7 +113,7 @@ def get_substance_name(substance_description):
     substance_description = substance_data_frame.loc[substance_data_frame['SubstanceIdentificationDescription'] == substance_description]['SubstanceIdentificationName']
     return(substance_description.values[0])
 
-def update_graph_on_change(monthly_averages, frame):
+def update_graph(monthly_averages, frame):
     """Update stats window plot every time a new metric is chosen. """
     # Clear out the frame (and any previous plots in it)
     for widget in frame.winfo_children():
@@ -130,16 +138,38 @@ def update_graph_on_change(monthly_averages, frame):
     plt.show()
     plot_frame.pack()
     frame.pack(pady=10)
+    
+def get_location_cords(available_locations):
+    pass
+
+def update_map(location_id, frame):
+    for widget in frame.winfo_children():
+        widget.destroy()
+    
+    map_widget = tkintermapview.TkinterMapView(frame, width=400, height=400, corner_radius=0)
+    
+    
+    # Set Coordinates
+    map_widget.set_position(36.1699, -115.1396) # Vegas Baby!
+
+    # Set Address
+    # map_widget.set_address("10 West Elm St., Chicago, IL, United States")
+
+    # Set A Zoom Level
+    map_widget.set_zoom(20)
+    map_widget.pack()
+    frame.pack()
+
 
 def home_window():
     """Load the home page."""
     
     # Initialize Home Window Elements
 
-    # Set a logo later
-    # root.iconbitmap("favicon.ico")
+    # Set logo
+    root.iconphoto(True, home_window_icon)
 
-    root.geometry("500x250")
+    root.geometry("450x200")
     root.title("Chesapeake Checkup")
     select_location_frame = tk.Frame(root)
 
@@ -158,29 +188,40 @@ def home_window():
     location_cb["values"] = location_names
     location_cb.set("Select a Watershed")
     location_cb.pack(side=tk.LEFT, padx=5)
-
-    """
-        For the future:
-        Create a function to read the combobox every time it is edited and suggest autofill options as the user types.
-        Also set the default value again every time it is blank.
-    """
+    
+    # On combobox change, update the map
+    # location_cb.bind('<<ComboboxSelected>>', lambda event: update_map_on_change(monthly_averages, plot_frame_wrapper))
 
     select_location_btn = tk.Button(select_location_frame, text="View", command=stats_window, font=BUTTON_FONT)
     select_location_btn.pack(side=tk.LEFT, padx=5)
 
     select_location_frame.pack()
+    
+    # map_frame = tk.Frame(root)
 
     root.mainloop()
 
 def stats_window():
+    '''Stats window with recent data and graphs over time.'''
     stats_window = tk.Toplevel(root)
     location_name = selected_location_name.get()
     
     stats_window.geometry("500x600")
     stats_window.title(location_name)
+    
+    # Set logo
+    # stats_window.iconphoto(False, stats_window_icon)
+    
     # Create a Label in New window
-    title = tk.Label(stats_window, text=location_name, font=TITLE_FONT)
+    title_frame = tk.Frame(stats_window)
+    
+    title = tk.Label(title_frame, text=location_name, font=TITLE_FONT)
     title.pack(pady=10)
+    
+    # info_button = tk.Button(title_frame, text = ('ⓘ'))
+    # info_button.pack()
+    
+    title_frame.pack()
     
     location_id = str(get_location_id(location_name))
     
@@ -195,7 +236,9 @@ def stats_window():
     
     latest_data = get_latest_data(water_quality_data)
     
-    # print(location_name + ":")
+    substance_labels = []
+    tool_tips = []
+    
     for key in latest_data:
         # Frame for each substance label
         current_substance_frame = tk.Frame(recent_measurements_label_frame)
@@ -208,10 +251,19 @@ def stats_window():
         substance_label_title.pack(side=tk.LEFT)
         substance_label.pack(side=tk.LEFT)
         
+        #Create tooltips that show the date that each substance data was last updated 
+        date = datetime.strptime(latest_data[key]["SampleDate"],"%Y-%m-%dT%H:%M:%S").strftime("%m/%d/%Y")
+        
+        tool_tips.append("Last updated: " + date) 
+        substance_labels.append(current_substance_frame)
         #Save this key in a list that we can use for our selection combobox later
         metric_names.append(substance_desc)
         
         current_substance_frame.pack()
+    
+    # Apply tooltips that appear when user hovers over labels
+    for label, tooltip in zip(substance_labels, tool_tips):
+        Hovertip(label, tooltip)
     
     recent_measurements_label_frame.pack(padx=20, pady=5)
     
@@ -239,7 +291,10 @@ def stats_window():
     plot_frame_wrapper = tk.Frame(stats_window)
     
     # On combobox change, update the graph
-    metric_cb.bind('<<ComboboxSelected>>', lambda event: update_graph_on_change(monthly_averages, plot_frame_wrapper))
+    metric_cb.bind('<<ComboboxSelected>>', lambda event: update_graph(monthly_averages, plot_frame_wrapper))
+    
+def info_page():
+    pass
     
 def main():
     home_window()
