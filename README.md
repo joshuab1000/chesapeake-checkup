@@ -5,11 +5,15 @@ Chesapeake Checkup is a Windows desktop application written in Python using Tkin
 
 ## Installation
 
+Download all files from the `main` repository, or copy `main.py` and the `icons` directory separately to the same directory.  
+
 Use the package manager [pip](https://pip.pypa.io/en/stable/) to install the following libraries: [Requests](https://requests.readthedocs.io/en/latest/), [Pandas](https://pandas.pydata.org/), [Matplotlib](https://matplotlib.org/), and [Tkintermapview](https://github.com/TomSchimansky/TkinterMapView).
 
 ```bash
 pip install matplotlib, requests, pandas, tkintermapview
 ```
+
+## Usage Instructions
 
 ## Credits
 
