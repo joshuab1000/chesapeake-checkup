@@ -47,12 +47,14 @@ home_window_icon = tk.PhotoImage(file="icons/bluecrab.png")
 selected_location_name = tk.StringVar()
 # Metric selected from stats window combobox
 selected_metric = tk.StringVar()
-
+# Temporarily store all the markers that are placed
+map_markers = []
 
 def get_locations():
     """Return a dictionary of all available locations with ID and Name attributes."""
     # Monitoring Location
-    attribute_ids = requests.get('https://data.chesapeakebay.net/api.JSON/WaterQuality/Station/HUC8/') #"https://data.chesapeakebay.net/api.json/" + geographical_attribute)
+    url = 'https://data.chesapeakebay.net/api.JSON/' + section + '/Station/' + geographical_attribute
+    attribute_ids = requests.get(url)
     attribute_data = json.loads(attribute_ids.text)
     attribute_name = geographical_attribute + "Description"
     
@@ -60,28 +62,29 @@ def get_locations():
     attribute_id = 'HUCEightId' # geographical_attribute + "Id"
     
     # Get location ID and name for each location, append it to list
-    locations = []
+    locations = {}
     for attribute in attribute_data:
         current_location_id = attribute[attribute_id]
         current_location_name = attribute[attribute_name]
-        
-        locations.append(dict(id=current_location_id, name=current_location_name))
+        locations[current_location_id] = current_location_name
     return locations
 
 def get_location_names(available_locations):
     """Get the names of locations from a list of available locations"""
-    available_locations = get_locations()
-    location_names = []
-    for location in available_locations:
-        location_names.append(location["name"])
+    # available_locations = get_locations()
+    location_names = list(available_locations.values())
+    # location_names = []
+    # for location in available_locations:
+    #     location_names.append(location["name"])
     return location_names
 
 def get_location_id(location_name):
     """Get the ID of a location by its name"""
     available_locations = get_locations()
-    for location in available_locations:
-        if location["name"] == location_name:
-            return location["id"]
+    for id, name in available_locations.items():
+        if name == location_name:
+            return id
+    return("Error: Location ID Not Found")
 
 def get_latest_data(water_quality_data):
     """Get the most recently uploaded data, return it as a list of dictionaries with paramaters as the keys"""
@@ -97,7 +100,8 @@ def get_latest_data(water_quality_data):
 
 def get_substance_description(substance_name):
     """Get the full description of a substance from its name"""
-    substances = requests.get('https://data.chesapeakebay.net/api.json/Substances')
+    url = 'https://data.chesapeakebay.net/api.json/Substances'
+    substances = requests.get(url)
     substance_data = json.loads(substances.text)
     
     substance_data_frame = pd.DataFrame(substance_data)
@@ -106,14 +110,15 @@ def get_substance_description(substance_name):
 
 def get_substance_name(substance_description):
     """Get the substance name abbreviation from its full description"""
-    substances = requests.get('https://data.chesapeakebay.net/api.json/Substances')
+    url = 'https://data.chesapeakebay.net/api.json/Substances'
+    substances = requests.get(url)
     substance_data = json.loads(substances.text)
     
     substance_data_frame = pd.DataFrame(substance_data)
     substance_description = substance_data_frame.loc[substance_data_frame['SubstanceIdentificationDescription'] == substance_description]['SubstanceIdentificationName']
     return(substance_description.values[0])
 
-def update_graph(monthly_averages, frame):
+def update_graph(frame, monthly_averages):
     """Update stats window plot every time a new metric is chosen. """
     # Clear out the frame (and any previous plots in it)
     for widget in frame.winfo_children():
@@ -139,26 +144,65 @@ def update_graph(monthly_averages, frame):
     plot_frame.pack()
     frame.pack(pady=10)
     
-def get_location_cords(available_locations):
-    pass
+def get_location_coords(location_id):
+    '''Return all coordinates of a location from its ID (latitude, longitude) as a dataframe.'''
+    url = 'https://data.chesapeakebay.net/api.JSON/' + section + '/Station/' + geographical_attribute + '/' + str(location_id)
+    all_location_coords = requests.get(url)
+    all_location_coords_data = json.loads(all_location_coords.text)
+    # Get coordinates from each location
+    data_frame = pd.DataFrame(all_location_coords_data)
+    coord_pairs = data_frame[['Latitude', 'Longitude']].apply(tuple, axis=1).tolist()
+    # print(coord_pairs)
+    return coord_pairs
 
-def update_map(location_id, frame):
-    for widget in frame.winfo_children():
-        widget.destroy()
+def get_mean_coord(coord_pairs):
+    '''Return the average coordinates (Latitude, Longitude) from a set of coordinates.'''
+    coords = [0, 0]
+    for pair in coord_pairs:
+        coords[0] += pair[0]
+        coords[1] += pair[1]
+    coords[0] /= len(coord_pairs)
+    coords[1] /= len(coord_pairs)
+    return(coords)
+
+def get_extreme_coords(coord_pairs):
+    '''Return the top-left and bottom-right boundaries from a list of coordinates.'''
     
-    map_widget = tkintermapview.TkinterMapView(frame, width=400, height=400, corner_radius=0)
+    lat_min = min(coord[0] for coord in coord_pairs)
+    lat_max = max(coord[0] for coord in coord_pairs)
+    lon_min = min(coord[1] for coord in coord_pairs)
+    lon_max = max(coord[1] for coord in coord_pairs)
     
+    top_left = [lat_max, lon_min]
+    bottom_right = [lat_min, lon_max]
     
+    extremes = [top_left, bottom_right]
+    return(extremes)
+
+def update_map(map):
+    '''Update a map widget to display a new location.'''
+    
+    location_name = selected_location_name.get()
+    location_id = get_location_id(location_name)
+    all_location_coordinates = get_location_coords(location_id)
+    # central_lat, central_lon = get_mean_coord(all_location_coordinates)
+    top_left, bottom_right = get_extreme_coords(all_location_coordinates)
+    # existing_markers = map_markers
+    
+    map.delete_all_marker()
+
+    for lat, lon in all_location_coordinates:
+        map.set_marker(lat, lon)
     # Set Coordinates
-    map_widget.set_position(36.1699, -115.1396) # Vegas Baby!
+    # Mean location of all coordinates
+    # map.set_position(central_lat, central_lon)
 
-    # Set Address
-    # map_widget.set_address("10 West Elm St., Chicago, IL, United States")
+    map.fit_bounding_box((top_left[0], top_left[1]), (bottom_right[0], bottom_right[1]))
+    
+    
 
     # Set A Zoom Level
-    map_widget.set_zoom(20)
-    map_widget.pack()
-    frame.pack()
+    # map.set_zoom(10)
 
 
 def home_window():
@@ -169,7 +213,7 @@ def home_window():
     # Set logo
     root.iconphoto(True, home_window_icon)
 
-    root.geometry("450x200")
+    root.geometry("400x500")
     root.title("Chesapeake Checkup")
     select_location_frame = tk.Frame(root)
 
@@ -188,16 +232,21 @@ def home_window():
     location_cb["values"] = location_names
     location_cb.set("Select a Watershed")
     location_cb.pack(side=tk.LEFT, padx=5)
-    
-    # On combobox change, update the map
-    # location_cb.bind('<<ComboboxSelected>>', lambda event: update_map_on_change(monthly_averages, plot_frame_wrapper))
 
     select_location_btn = tk.Button(select_location_frame, text="View", command=stats_window, font=BUTTON_FONT)
     select_location_btn.pack(side=tk.LEFT, padx=5)
 
     select_location_frame.pack()
     
-    # map_frame = tk.Frame(root)
+    # Generate a map
+    map_frame = tk.Frame(root)
+    map = tkintermapview.TkinterMapView(map_frame, width=300, height=300, corner_radius=0)
+    map.set_position(38.685819, -76.406935) # The Chesapeake Bay
+    map.set_zoom(7)
+    map.pack()
+    map_frame.pack(pady=30)
+    
+    location_cb.bind('<<ComboboxSelected>>', lambda event: update_map(map))
 
     root.mainloop()
 
@@ -217,9 +266,6 @@ def stats_window():
     
     title = tk.Label(title_frame, text=location_name, font=TITLE_FONT)
     title.pack(pady=10)
-    
-    # info_button = tk.Button(title_frame, text = ('ⓘ'))
-    # info_button.pack()
     
     title_frame.pack()
     
@@ -291,10 +337,8 @@ def stats_window():
     plot_frame_wrapper = tk.Frame(stats_window)
     
     # On combobox change, update the graph
-    metric_cb.bind('<<ComboboxSelected>>', lambda event: update_graph(monthly_averages, plot_frame_wrapper))
-    
-def info_page():
-    pass
+    metric_cb.bind('<<ComboboxSelected>>', lambda event: update_graph(plot_frame_wrapper, monthly_averages))
+
     
 def main():
     home_window()
