@@ -1,15 +1,12 @@
 import tkinter as tk
 from tkinter import ttk
 
-# from PIL import Image, ImageTk # For icon and images later
 import requests, json, tkintermapview
 from datetime import date, datetime
 import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from idlelib.tooltip import Hovertip
-# from ttkwidgets.frames import Balloon
-# from ttkwidgets.frames import AutocompleteCombobox
 
 # Config Variables
 section = "WaterQuality"
@@ -20,7 +17,6 @@ data_stream_data = "0,1"
 program_id = "2,4,6"
 project_id = "12,13,15,35,36,2,3,7,33,34,23,24"
 geographical_attribute = "HUC8"
-# attribute_id = "26"
 substance_ids = "123,31,73,104,105"
 
 # Font Constants:
@@ -71,11 +67,7 @@ def get_locations():
 
 def get_location_names(available_locations):
     """Get the names of locations from a list of available locations"""
-    # available_locations = get_locations()
     location_names = list(available_locations.values())
-    # location_names = []
-    # for location in available_locations:
-    #     location_names.append(location["name"])
     return location_names
 
 def get_location_id(location_name):
@@ -84,7 +76,8 @@ def get_location_id(location_name):
     for id, name in available_locations.items():
         if name == location_name:
             return id
-    return("Error: Location ID Not Found")
+    print("Error: Location ID Not Found")
+    return(-1)
 
 def get_latest_data(water_quality_data):
     """Get the most recently uploaded data, return it as a list of dictionaries with paramaters as the keys"""
@@ -128,7 +121,6 @@ def update_graph(frame, monthly_averages):
     plot_frame = tk.Frame(frame)
     substance_description = selected_metric.get()
     substance_name = get_substance_name(substance_description)
-    # monthly_averages.to_html('temp.html')
     data = monthly_averages.loc[substance_name, :].tail(12)
     
     figure = plt.Figure(figsize=(5,5), dpi=100) #figure size in inches
@@ -152,7 +144,6 @@ def get_location_coords(location_id):
     # Get coordinates from each location
     data_frame = pd.DataFrame(all_location_coords_data)
     coord_pairs = data_frame[['Latitude', 'Longitude']].apply(tuple, axis=1).tolist()
-    # print(coord_pairs)
     return coord_pairs
 
 def get_mean_coord(coord_pairs):
@@ -167,7 +158,6 @@ def get_mean_coord(coord_pairs):
 
 def get_extreme_coords(coord_pairs):
     '''Return the top-left and bottom-right boundaries from a list of coordinates.'''
-    
     lat_min = min(coord[0] for coord in coord_pairs)
     lat_max = max(coord[0] for coord in coord_pairs)
     lon_min = min(coord[1] for coord in coord_pairs)
@@ -185,8 +175,8 @@ def update_map(map):
     location_name = selected_location_name.get()
     location_id = get_location_id(location_name)
     all_location_coordinates = get_location_coords(location_id)
-    # central_lat, central_lon = get_mean_coord(all_location_coordinates)
-    top_left, bottom_right = get_extreme_coords(all_location_coordinates)
+    central_lat, central_lon = get_mean_coord(all_location_coordinates)
+    # top_left, bottom_right = get_extreme_coords(all_location_coordinates)
     # existing_markers = map_markers
     
     map.delete_all_marker()
@@ -195,14 +185,12 @@ def update_map(map):
         map.set_marker(lat, lon)
     # Set Coordinates
     # Mean location of all coordinates
-    # map.set_position(central_lat, central_lon)
+    map.set_position(central_lat, central_lon)
 
-    map.fit_bounding_box((top_left[0], top_left[1]), (bottom_right[0], bottom_right[1]))
+    # map.fit_bounding_box((top_left[0], top_left[1]), (bottom_right[0], bottom_right[1]))
     
-    
-
     # Set A Zoom Level
-    # map.set_zoom(10)
+    map.set_zoom(10)
 
 
 def home_window():
@@ -215,6 +203,7 @@ def home_window():
 
     root.geometry("400x500")
     root.title("Chesapeake Checkup")
+    root.resizable(False, False)
     select_location_frame = tk.Frame(root)
 
     label = tk.Label(root, text="Chesapeake Checkup", font=TITLE_FONT)
@@ -257,6 +246,7 @@ def stats_window():
     
     stats_window.geometry("500x600")
     stats_window.title(location_name)
+    stats_window.resizable(False, False)
     
     # Set logo
     # stats_window.iconphoto(False, stats_window_icon)
@@ -309,7 +299,7 @@ def stats_window():
     
     # Apply tooltips that appear when user hovers over labels
     for label, tooltip in zip(substance_labels, tool_tips):
-        Hovertip(label, tooltip)
+        Hovertip(label, tooltip, hover_delay=500)
     
     recent_measurements_label_frame.pack(padx=20, pady=5)
     
