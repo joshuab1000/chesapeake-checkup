@@ -45,6 +45,8 @@ map_markers = []
 #Becomes True when the home window combobox updates
 location_selected = False
 
+# Select a random icon from the two icon images to display
+icon_file = random.choice(["icons/bluecrab1.ico", "icons/bluecrab2.ico"])
 # Pre-load list of substances from the API
 substances = requests.get('https://data.chesapeakebay.net/api.json/Substances')
 substance_data = json.loads(substances.text)
@@ -79,7 +81,7 @@ def get_location_id(location_name):
     for id, name in available_locations.items():
         if name == location_name:
             return id
-    print("Error: Location ID Not Found")
+    print("Error: Location ID Not Found.")
     return(-1)
 
 def get_latest_data(water_quality_data):
@@ -177,9 +179,11 @@ def update_map(map):
     central_lat, central_lon = get_mean_coord(all_location_coordinates)
     # top_left, bottom_right = get_extreme_coords(all_location_coordinates)
     # existing_markers = map_markers
+    try:
+        map.delete_all_marker()
+    except:
+        print("Error: Marker deletion interupted.")
     
-    map.delete_all_marker()
-
     for lat, lon in all_location_coordinates:
         map.set_marker(lat, lon)
         
@@ -198,7 +202,7 @@ def view_location_button_pressed():
     if selected_location_name.get() != "Select a Watershed":
         stats_window()
     
-def home_window(icon_file):
+def home_window():
     """Load the home page."""
     # Set logo
     try:
@@ -249,9 +253,15 @@ def stats_window():
     stats_window = tk.Toplevel(root)
     location_name = selected_location_name.get()
     
-    stats_window.geometry("500x700")
+    stats_window.geometry("500x710")
     stats_window.title(location_name)
     stats_window.resizable(False, False)
+    
+    # Set the logo
+    try:
+        stats_window.iconbitmap(icon_file)
+    except:
+        print("Error: Icon image not found.")
     
     # Create a Label in New window
     title_frame = tk.Frame(stats_window)
@@ -340,16 +350,8 @@ def stats_window():
         print("Error:", location_name, "contains no data in the set timeframe.")
 
     
-def main():
-    # Select a random icon from the two icon images to display
-    icon_bool = random.randint(0,1)
-    icon_file = ""
-    if icon_bool:
-        icon_file = "icons/bluecrab1.ico"
-    else:
-        icon_file = "icons/bluecrab2.ico"
-        
-    home_window(icon_file)
+def main():      
+    home_window()
 
 if __name__ == "__main__":
     main()
