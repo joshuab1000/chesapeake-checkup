@@ -121,11 +121,11 @@ def update_graph(frame, monthly_averages):
     data = monthly_averages.loc[substance_name, :].tail(12)
     figure = plt.Figure(figsize=(4.5,4), dpi=100) #figure size in inches
     figure_plot = figure.add_subplot(1, 1, 1) # num of rows, num of columns, index position
-    figure_plot.set_ylabel(substance_description)
+    figure_plot.set_ylabel("Mean " + substance_description)
     figure.subplots_adjust(bottom=0.15, left=0.15)
     line_graph = FigureCanvasTkAgg(figure, plot_frame)
     line_graph.get_tk_widget().pack(fill=tk.BOTH)
-    data.plot(kind='line', legend=False, ax=figure_plot, color='b', marker='o', fontsize=10, xlabel="X Axis Label")
+    data.plot(kind='line', legend=False, ax=figure_plot, color='b', marker='o', fontsize=10, xlabel="Month")
 
     figure_plot.set_title(('Monthly Average ' + substance_name + ' Over the Last Year'))
 
@@ -169,7 +169,6 @@ def get_extreme_coords(coord_pairs):
 
 def update_map(map):
     '''Update a map widget to display a new location.'''
-    
     location_name = selected_location_name.get()
     location_id = get_location_id(location_name)
     all_location_coordinates = get_location_coords(location_id)
@@ -191,8 +190,7 @@ def update_map(map):
     map.set_zoom(10)
 
 def location_selected(map):
-    if selected_location_name.get() != "Select a Watershed":
-        update_map(map)
+    update_map(map)
         
 def view_location_button_pressed():
     if selected_location_name.get() != "Select a Watershed":
@@ -263,70 +261,78 @@ def stats_window():
     recent_measurements_label_frame = tk.LabelFrame(stats_window, text="Recent Measurements:", font=LABEL_FONT)
     
     url = 'https://datahub.chesapeakebay.net/api.JSON/' + section + '/' + subsection +'/' + start_date + '/' + end_date + '/' + data_stream_data + '/' + program_id + '/' + project_id + '/' + geographical_attribute +'/' + location_id + '/' + substance_ids
-
     water_quality = requests.get(url)
     water_quality_data = json.loads(water_quality.text)
     
     metric_names = []
     
-    latest_data = get_latest_data(water_quality_data)
-    
-    substance_labels = []
-    tool_tips = []
-    
-    for key in latest_data:
-        # Frame for each substance label
-        current_substance_frame = tk.Frame(recent_measurements_label_frame)
+    try: # Try to display the data, if there is any
+        latest_data = get_latest_data(water_quality_data)
         
-        substance_desc = get_substance_description(key)
-        substance_label_title_content = substance_desc + ':'
-        substance_label_content = str(latest_data[key]["MeasureValue"]) + ' ' + str(latest_data[key]["Unit"]) # , '(' + latest_data[key]["SampleDate"] + ')'
-        substance_label_title = tk.Label(current_substance_frame, text=substance_label_title_content, font=SUBSTANCE_FONT)
-        substance_label = tk.Label(current_substance_frame, text=substance_label_content, font=SUBSTANCE_CONTENT_FONT)
-        substance_label_title.pack(side=tk.LEFT)
-        substance_label.pack(side=tk.LEFT)
+        substance_labels = []
+        tool_tips = []
         
-        #Create tooltips that show the date that each substance data was last updated 
-        date = datetime.strptime(latest_data[key]["SampleDate"],"%Y-%m-%dT%H:%M:%S").strftime("%m/%d/%Y")
+        for key in latest_data:
+            # Frame for each substance label
+            current_substance_frame = tk.Frame(recent_measurements_label_frame)
+            
+            substance_desc = get_substance_description(key)
+            substance_label_title_content = substance_desc + ':'
+            substance_label_content = str(latest_data[key]["MeasureValue"]) + ' ' + str(latest_data[key]["Unit"]) # , '(' + latest_data[key]["SampleDate"] + ')'
+            substance_label_title = tk.Label(current_substance_frame, text=substance_label_title_content, font=SUBSTANCE_FONT)
+            substance_label = tk.Label(current_substance_frame, text=substance_label_content, font=SUBSTANCE_CONTENT_FONT)
+            substance_label_title.pack(side=tk.LEFT)
+            substance_label.pack(side=tk.LEFT)
+            
+            #Create tooltips that show the date that each substance data was last updated 
+            date = datetime.strptime(latest_data[key]["SampleDate"],"%Y-%m-%dT%H:%M:%S").strftime("%m/%d/%Y")
+            
+            tool_tips.append("Last updated: " + date) 
+            substance_labels.append(current_substance_frame)
+            #Save this key in a list that we can use for our selection combobox later
+            metric_names.append(substance_desc)
+            
+            current_substance_frame.pack()
+    
+        # Apply tooltips that appear when user hovers over labels
+        for label, tooltip in zip(substance_labels, tool_tips):
+            Hovertip(label, tooltip, hover_delay=500)
         
-        tool_tips.append("Last updated: " + date) 
-        substance_labels.append(current_substance_frame)
-        #Save this key in a list that we can use for our selection combobox later
-        metric_names.append(substance_desc)
+        recent_measurements_label_frame.pack(padx=20, pady=5)
         
-        current_substance_frame.pack()
-    
-    # Apply tooltips that appear when user hovers over labels
-    for label, tooltip in zip(substance_labels, tool_tips):
-        Hovertip(label, tooltip, hover_delay=500)
-    
-    recent_measurements_label_frame.pack(padx=20, pady=5)
-    
-    # Create a combobox for selecting the metric that will be graphed.
-    select_metric_frame = tk.Frame(stats_window)
-    
-    select_metric_label = tk.Label(select_metric_frame, text="Select a Metric to Graph Over Time:", font=BUTTON_FONT)
-    select_metric_label.pack(side=tk.TOP, anchor=tk.NW)
+        if metric_names:
+            # Create a combobox for selecting the metric that will be graphed.
+            select_metric_frame = tk.Frame(stats_window)
+            
+            select_metric_label = tk.Label(select_metric_frame, text="Select a Metric to Graph Over Time:", font=BUTTON_FONT)
+            select_metric_label.pack(side=tk.TOP, anchor=tk.NW)
 
-    metric_cb = ttk.Combobox(select_metric_frame, textvariable=selected_metric, state="readonly", font=BUTTON_FONT)
-    metric_names.sort()
-    metric_cb["values"] = metric_names
+            metric_cb = ttk.Combobox(select_metric_frame, textvariable=selected_metric, state="readonly", font=BUTTON_FONT)
+            metric_names.sort()
+            metric_cb["values"] = metric_names
 
-    metric_cb.pack(side=tk.LEFT, padx=10)
-    metric_cb.set("Select a Metric")
+            metric_cb.pack(side=tk.LEFT, padx=10)
+            metric_cb.set("Select a Metric")
+            
+            select_metric_frame.pack(pady=5)
     
-    select_metric_frame.pack(pady=5)
-    
-    # Store data in a dataframe to be plotted
-    data_frame = pd.DataFrame(water_quality_data)
-    data_frame = data_frame[["Parameter", "MeasureValue", "Unit", "SampleDate"]]
-    data_frame["SampleDate"] = pd.to_datetime(data_frame["SampleDate"], format="%Y-%m-%dT%H:%M:%S")
-    monthly_averages = pd.DataFrame(data_frame.groupby(['Parameter', pd.Grouper(key='SampleDate', freq='M')])['MeasureValue'].mean())
-    
-    plot_frame_wrapper = tk.Frame(stats_window)
-    
-    # On combobox change, update the graph
-    metric_cb.bind('<<ComboboxSelected>>', lambda event: update_graph(plot_frame_wrapper, monthly_averages))
+        # Store data in a dataframe to be plotted
+        data_frame = pd.DataFrame(water_quality_data)
+        data_frame = data_frame[["Parameter", "MeasureValue", "Unit", "SampleDate"]]
+        data_frame["SampleDate"] = pd.to_datetime(data_frame["SampleDate"], format="%Y-%m-%dT%H:%M:%S")
+        monthly_averages = pd.DataFrame(data_frame.groupby(['Parameter', pd.Grouper(key='SampleDate', freq='M')])['MeasureValue'].mean())
+        
+        plot_frame_wrapper = tk.Frame(stats_window)
+        
+        # On combobox change, update the graph
+        metric_cb.bind('<<ComboboxSelected>>', lambda event: update_graph(plot_frame_wrapper, monthly_averages))
+        
+    except: # No data for this location
+        empty_frame = tk.Frame(stats_window)
+        empty_frame_label = tk.Label(empty_frame, text="No Data to Display.", font=BUTTON_FONT)
+        empty_frame_label.pack()
+        empty_frame.pack()
+        print(location_name, "contains no data in the set timeframe.")
 
     
 def main():
