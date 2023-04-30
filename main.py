@@ -122,14 +122,17 @@ def update_graph(frame, monthly_averages):
     substance_description = selected_metric.get()
     substance_name = get_substance_name(substance_description)
     data = monthly_averages.loc[substance_name, :].tail(12)
-    
-    figure = plt.Figure(figsize=(5,5), dpi=100) #figure size in inches
+    figure = plt.Figure(figsize=(4.5,4), dpi=100) #figure size in inches
     figure_plot = figure.add_subplot(1, 1, 1) # num of rows, num of columns, index position
     figure_plot.set_ylabel(substance_description)
+    figure.subplots_adjust(bottom=0.15, left=0.15)
     line_graph = FigureCanvasTkAgg(figure, plot_frame)
-    line_graph.get_tk_widget().pack( fill=tk.BOTH )
-    data.plot(kind='line', legend=False, ax=figure_plot, color='b', marker='o', fontsize=10)
+    line_graph.get_tk_widget().pack(fill=tk.BOTH)
+    data.plot(kind='line', legend=False, ax=figure_plot, color='b', marker='o', fontsize=10, xlabel="X Axis Label")
+
     figure_plot.set_title(('Monthly Average ' + substance_name + ' Over the Last Year'))
+
+
  
     # Show the plot
     plt.show()
@@ -244,7 +247,7 @@ def stats_window():
     stats_window = tk.Toplevel(root)
     location_name = selected_location_name.get()
     
-    stats_window.geometry("500x600")
+    stats_window.geometry("500x700")
     stats_window.title(location_name)
     stats_window.resizable(False, False)
     
