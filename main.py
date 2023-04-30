@@ -37,7 +37,6 @@ plt.rcParams["font.family"] = FONT
 root = tk.Tk()
 
 home_window_icon = tk.PhotoImage(file="icons/bluecrab.png")
-# stats_window_icon = tk.PhotoImage(file="icons/crab.png")
 
 # Location selected from main window combobox
 selected_location_name = tk.StringVar()
@@ -45,9 +44,15 @@ selected_location_name = tk.StringVar()
 selected_metric = tk.StringVar()
 # Temporarily store all the markers that are placed
 map_markers = []
+#Becomes True when the home window combobox updates
+location_selected = False
+
+# Pre-load list of substances from the API
+substances = requests.get('https://data.chesapeakebay.net/api.json/Substances')
+substance_data = json.loads(substances.text)
 
 def get_locations():
-    """Return a dictionary of all available locations with ID and Name attributes."""
+    '''Return a dictionary of all available locations with ID and Name attributes.'''
     # Monitoring Location
     url = 'https://data.chesapeakebay.net/api.JSON/' + section + '/Station/' + geographical_attribute
     attribute_ids = requests.get(url)
@@ -66,12 +71,12 @@ def get_locations():
     return locations
 
 def get_location_names(available_locations):
-    """Get the names of locations from a list of available locations"""
+    '''Get the names of locations from a list of available locations'''
     location_names = list(available_locations.values())
     return location_names
 
 def get_location_id(location_name):
-    """Get the ID of a location by its name"""
+    '''Get the ID of a location by its name'''
     available_locations = get_locations()
     for id, name in available_locations.items():
         if name == location_name:
@@ -80,7 +85,7 @@ def get_location_id(location_name):
     return(-1)
 
 def get_latest_data(water_quality_data):
-    """Get the most recently uploaded data, return it as a list of dictionaries with paramaters as the keys"""
+    '''Get the most recently uploaded data, return it as a list of dictionaries with paramaters as the keys.'''
     latest_data = {}
     for sample in water_quality_data:
         parameter = sample["Parameter"]
@@ -92,27 +97,19 @@ def get_latest_data(water_quality_data):
     return(latest_data)
 
 def get_substance_description(substance_name):
-    """Get the full description of a substance from its name"""
-    url = 'https://data.chesapeakebay.net/api.json/Substances'
-    substances = requests.get(url)
-    substance_data = json.loads(substances.text)
-    
+    '''Get the full description of a substance from its name.'''
     substance_data_frame = pd.DataFrame(substance_data)
     substance_description = substance_data_frame.loc[substance_data_frame['SubstanceIdentificationName'] == substance_name]['SubstanceIdentificationDescription']
     return(substance_description.values[0])
 
 def get_substance_name(substance_description):
-    """Get the substance name abbreviation from its full description"""
-    url = 'https://data.chesapeakebay.net/api.json/Substances'
-    substances = requests.get(url)
-    substance_data = json.loads(substances.text)
-    
+    '''Get the substance name abbreviation from its full description'''    
     substance_data_frame = pd.DataFrame(substance_data)
     substance_description = substance_data_frame.loc[substance_data_frame['SubstanceIdentificationDescription'] == substance_description]['SubstanceIdentificationName']
     return(substance_description.values[0])
 
 def update_graph(frame, monthly_averages):
-    """Update stats window plot every time a new metric is chosen. """
+    '''Update stats window plot every time a new metric is chosen.'''
     # Clear out the frame (and any previous plots in it)
     for widget in frame.winfo_children():
         widget.destroy()
@@ -132,8 +129,6 @@ def update_graph(frame, monthly_averages):
 
     figure_plot.set_title(('Monthly Average ' + substance_name + ' Over the Last Year'))
 
-
- 
     # Show the plot
     plt.show()
     plot_frame.pack()
@@ -195,12 +190,16 @@ def update_map(map):
     # Set A Zoom Level
     map.set_zoom(10)
 
-
+def location_selected(map):
+    if selected_location_name.get() != "Select a Watershed":
+        update_map(map)
+        
+def view_location_button_pressed():
+    if selected_location_name.get() != "Select a Watershed":
+        stats_window()
+    
 def home_window():
     """Load the home page."""
-    
-    # Initialize Home Window Elements
-
     # Set logo
     root.iconphoto(True, home_window_icon)
 
@@ -225,7 +224,7 @@ def home_window():
     location_cb.set("Select a Watershed")
     location_cb.pack(side=tk.LEFT, padx=5)
 
-    select_location_btn = tk.Button(select_location_frame, text="View", command=stats_window, font=BUTTON_FONT)
+    select_location_btn = tk.Button(select_location_frame, text="View", command=view_location_button_pressed, font=BUTTON_FONT)
     select_location_btn.pack(side=tk.LEFT, padx=5)
 
     select_location_frame.pack()
@@ -238,7 +237,7 @@ def home_window():
     map.pack()
     map_frame.pack(pady=30)
     
-    location_cb.bind('<<ComboboxSelected>>', lambda event: update_map(map))
+    location_cb.bind('<<ComboboxSelected>>', lambda event: location_selected(map))
 
     root.mainloop()
 
@@ -250,9 +249,6 @@ def stats_window():
     stats_window.geometry("500x700")
     stats_window.title(location_name)
     stats_window.resizable(False, False)
-    
-    # Set logo
-    # stats_window.iconphoto(False, stats_window_icon)
     
     # Create a Label in New window
     title_frame = tk.Frame(stats_window)
