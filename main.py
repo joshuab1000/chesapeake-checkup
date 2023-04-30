@@ -106,6 +106,10 @@ def get_substance_name(substance_description):
     substance_description = substance_data_frame.loc[substance_data_frame['SubstanceIdentificationDescription'] == substance_description]['SubstanceIdentificationName']
     return(substance_description.values[0])
 
+def metric_selected(frame, monthly_averages):
+    root.update()
+    update_graph(frame, monthly_averages)
+
 def update_graph(frame, monthly_averages):
     '''Update stats window plot every time a new metric is chosen.'''
     # Clear out the frame (and any previous plots in it)
@@ -178,16 +182,16 @@ def update_map(map):
 
     for lat, lon in all_location_coordinates:
         map.set_marker(lat, lon)
-    # Set Coordinates
-    # Mean location of all coordinates
+        
+    # Set position to the mean location of all coordinates
     map.set_position(central_lat, central_lon)
-
     # map.fit_bounding_box((top_left[0], top_left[1]), (bottom_right[0], bottom_right[1]))
     
     # Set A Zoom Level
     map.set_zoom(10)
 
 def location_selected(map):
+    root.update()
     update_map(map)
         
 def view_location_button_pressed():
@@ -326,7 +330,7 @@ def stats_window():
         plot_frame_wrapper = tk.Frame(stats_window)
         
         # On combobox change, update the graph
-        metric_cb.bind('<<ComboboxSelected>>', lambda event: update_graph(plot_frame_wrapper, monthly_averages))
+        metric_cb.bind('<<ComboboxSelected>>', lambda event: metric_selected(plot_frame_wrapper, monthly_averages))
         
     except: # No data for this location
         empty_frame = tk.Frame(stats_window)
