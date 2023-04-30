@@ -1,7 +1,7 @@
 import tkinter as tk
 from tkinter import ttk
 
-import requests, json, tkintermapview
+import requests, json, tkintermapview, random
 from datetime import date, datetime
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -35,8 +35,6 @@ plt.rcParams["font.family"] = FONT
 # Global variables:
 # Create the root tkinter frame
 root = tk.Tk()
-
-home_window_icon = tk.PhotoImage(file="icons/bluecrab.png")
 
 # Location selected from main window combobox
 selected_location_name = tk.StringVar()
@@ -196,10 +194,13 @@ def view_location_button_pressed():
     if selected_location_name.get() != "Select a Watershed":
         stats_window()
     
-def home_window():
+def home_window(icon_file):
     """Load the home page."""
     # Set logo
-    root.iconphoto(True, home_window_icon)
+    try:
+        root.iconbitmap(icon_file)
+    except:
+        print("Error: Icon image not found.")
 
     root.geometry("400x500")
     root.title("Chesapeake Checkup")
@@ -332,11 +333,19 @@ def stats_window():
         empty_frame_label = tk.Label(empty_frame, text="No Data to Display.", font=BUTTON_FONT)
         empty_frame_label.pack()
         empty_frame.pack()
-        print(location_name, "contains no data in the set timeframe.")
+        print("Error:", location_name, "contains no data in the set timeframe.")
 
     
 def main():
-    home_window()
+    # Select a random icon from the two icon images to display
+    icon_bool = random.randint(0,1)
+    icon_file = ""
+    if icon_bool:
+        icon_file = "icons/bluecrab1.ico"
+    else:
+        icon_file = "icons/bluecrab2.ico"
+        
+    home_window(icon_file)
 
 if __name__ == "__main__":
     main()
