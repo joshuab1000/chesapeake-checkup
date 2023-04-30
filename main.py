@@ -1,12 +1,14 @@
 import tkinter as tk
 from tkinter import ttk
 
-import requests, json, tkintermapview, random
+import requests, json, tkintermapview, random, threading
 from datetime import date, datetime
 import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from idlelib.tooltip import Hovertip
+
+from timeit import default_timer as timer
 
 # Config Variables
 section = "WaterQuality"
@@ -47,6 +49,7 @@ location_selected = False
 
 # Select a random icon from the two icon images to display
 icon_file = random.choice(["icons/bluecrab1.ico", "icons/bluecrab2.ico"])
+# root.iconbitmap(icon_file)
 # Pre-load list of substances from the API
 substances = requests.get('https://data.chesapeakebay.net/api.json/Substances')
 substance_data = json.loads(substances.text)
@@ -195,29 +198,46 @@ def update_map(map):
     map.set_zoom(10)
 
 def location_selected(map):
+    '''Handle location combobox value change.'''
     root.update()
     update_map(map)
         
 def view_location_button_pressed():
+    '''Handle view location button press.'''
     if selected_location_name.get() != "Select a Watershed":
+        # window_thread = threading.Thread(target=stats_window) #, args=(10,)
+        # window_thread.start()
         stats_window()
-    
-def home_window():
-    """Load the home page."""
-    # Set logo
+        
+        
+def set_icon(window_name, icon):
+    '''Set window icon.'''
     try:
-        root.iconbitmap(icon_file)
+        window_name.iconbitmap(icon)
     except:
         print("Error: Icon image not found.")
 
+def close_window(thread, window):
+    '''End the process when a window is closed.'''
+    window.destroy()
+    thread.join()
+    print("window cleared")
+    
+def load_water_quality(data, url):
+    data.append(requests.get(url))
+    
+def home_window():
+    """Load the home page."""
     root.geometry("400x500")
     root.title("Chesapeake Checkup")
     root.resizable(False, False)
     select_location_frame = tk.Frame(root)
-
+    
+    set_icon(root, icon_file)
+    
     label = tk.Label(root, text="Chesapeake Checkup", font=TITLE_FONT)
     label.pack(padx=20, pady=20)
-    
+
     select_label = tk.Label(select_location_frame, text="Select a Watershed:", font=BUTTON_FONT)
     select_label.pack(side=tk.TOP, anchor=tk.NW)
     
@@ -251,38 +271,50 @@ def home_window():
 def stats_window():
     '''Stats window with recent data and graphs over time.'''
     stats_window = tk.Toplevel(root)
-    location_name = selected_location_name.get()
-    
+
+    set_icon(stats_window, icon_file)
     stats_window.geometry("500x710")
+    location_name = selected_location_name.get()
     stats_window.title(location_name)
     stats_window.resizable(False, False)
     
-    # Set the logo
-    try:
-        stats_window.iconbitmap(icon_file)
-    except:
-        print("Error: Icon image not found.")
-    
     # Create a Label in New window
     title_frame = tk.Frame(stats_window)
-    
     title = tk.Label(title_frame, text=location_name, font=TITLE_FONT)
     title.pack(pady=10)
-    
     title_frame.pack()
+    
+    loading_frame = tk.Frame(stats_window)
+    loading_message = tk.Label(loading_frame, text="Data Loading...", font=LABEL_FONT)
+    loading_message.pack()
+    loading_frame.pack()
+    
+    # Update the window to have title and loading message prior to the following functions running.
+    stats_window.update()
     
     location_id = str(get_location_id(location_name))
     
     recent_measurements_label_frame = tk.LabelFrame(stats_window, text="Recent Measurements:", font=LABEL_FONT)
-    
     url = 'https://datahub.chesapeakebay.net/api.JSON/' + section + '/' + subsection +'/' + start_date + '/' + end_date + '/' + data_stream_data + '/' + program_id + '/' + project_id + '/' + geographical_attribute +'/' + location_id + '/' + substance_ids
-    water_quality = requests.get(url)
-    water_quality_data = json.loads(water_quality.text)
+    # Make water quality API call in a new thread since it can take several seconds.
+    # Display a loading message in the meantime.
+    water_quality = []
+    thread = threading.Thread(target=load_water_quality, args=(water_quality, url))
+    thread.start()
+    thread.join()
+    water_quality_data = json.loads(water_quality[0].text)
+    
+    # Delete loading message
+    loading_frame.pack_forget()
+    loading_frame.destroy()
     
     metric_names = []
     
     try: # Try to display the data, if there is any
+        
+
         latest_data = get_latest_data(water_quality_data)
+
         
         substance_labels = []
         tool_tips = []
@@ -344,13 +376,12 @@ def stats_window():
         
     except: # No data for this location
         empty_frame = tk.Frame(stats_window)
-        empty_frame_label = tk.Label(empty_frame, text="No Data to Display.", font=BUTTON_FONT)
+        empty_frame_label = tk.Label(empty_frame, text="No Data to Display.", font=LABEL_FONT)
         empty_frame_label.pack()
         empty_frame.pack()
         print("Error:", location_name, "contains no data in the set timeframe.")
-
     
-def main():      
+def main():
     home_window()
 
 if __name__ == "__main__":
