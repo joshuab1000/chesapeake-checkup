@@ -311,10 +311,7 @@ def stats_window():
     metric_names = []
     
     try: # Try to display the data, if there is any
-        
-
         latest_data = get_latest_data(water_quality_data)
-
         
         substance_labels = []
         tool_tips = []
