@@ -8,8 +8,6 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from idlelib.tooltip import Hovertip
 
-from timeit import default_timer as timer
-
 # Config Variables
 section = "WaterQuality"
 subsection = "WaterQuality"
@@ -204,9 +202,8 @@ def location_selected(map):
         
 def view_location_button_pressed():
     '''Handle view location button press.'''
+    #Make sure a location has been selected before opening a new window
     if selected_location_name.get() != "Select a Watershed":
-        # window_thread = threading.Thread(target=stats_window) #, args=(10,)
-        # window_thread.start()
         stats_window()
         
         
