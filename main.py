@@ -1,7 +1,7 @@
 import tkinter as tk
 from tkinter import ttk
 
-import requests, json, tkintermapview, random, threading
+import requests, json, tkintermapview, random, threading, os
 from datetime import date, datetime
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -32,6 +32,11 @@ SUBSTANCE_FONT = (FONT, SUBSTANCE_FONT_SIZE, 'bold')
 SUBSTANCE_CONTENT_FONT = (FONT, SUBSTANCE_FONT_SIZE)
 plt.rcParams["font.family"] = FONT
 
+# Locate icon files
+current_directory = os.path.dirname(os.path.abspath(__file__))
+icon_1_path = os.path.join(current_directory, 'icons', 'bluecrab1.ico')
+icon_2_path = os.path.join(current_directory, 'icons', 'bluecrab2.ico')
+
 # Global variables:
 # Create the root tkinter frame
 root = tk.Tk()
@@ -46,8 +51,8 @@ map_markers = []
 location_selected = False
 
 # Select a random icon from the two icon images to display
-icon_file = random.choice(["icons/bluecrab1.ico", "icons/bluecrab2.ico"])
-# root.iconbitmap(icon_file)
+icon_file = random.choice([icon_1_path, icon_2_path])
+
 # Pre-load list of substances from the API
 substances = requests.get('https://data.chesapeakebay.net/api.json/Substances')
 substance_data = json.loads(substances.text)
