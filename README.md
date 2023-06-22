@@ -27,3 +27,5 @@ pip install matplotlib, requests, pandas, tkintermapview
 ## Credits
 
 The logos for this app were created by [Alexander Jenkins](https://github.com/alexander-jenkins) and Ryan Hurst.
+
+All data comes from the [Chesapeake Bay Program](http://datahub.chesapeakebay.net/).
