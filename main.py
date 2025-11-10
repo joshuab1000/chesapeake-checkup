@@ -11,7 +11,7 @@ from idlelib.tooltip import Hovertip
 # Config Variables
 section = "WaterQuality"
 subsection = "WaterQuality"
-start_date = "1-1-2019"
+start_date = "1-1-2024"
 end_date = date.today().strftime('%#m-%#d-%Y')
 data_stream_data = "0,1"
 program_id = "2,4,6"
@@ -54,13 +54,13 @@ location_selected = False
 icon_file = random.choice([icon_1_path, icon_2_path])
 
 # Pre-load list of substances from the API
-substances = requests.get('https://data.chesapeakebay.net/api.json/Substances')
+substances = requests.get('https://datahub.chesapeakebay.net/api.json/Substances')
 substance_data = json.loads(substances.text)
 
 def get_locations():
     '''Return a dictionary of all available locations with ID and Name attributes.'''
     # Monitoring Location
-    url = 'https://data.chesapeakebay.net/api.JSON/' + section + '/Station/' + geographical_attribute
+    url = 'https://datahub.chesapeakebay.net/api.JSON/' + section + '/Station/' + geographical_attribute
     attribute_ids = requests.get(url)
     attribute_data = json.loads(attribute_ids.text)
     attribute_name = geographical_attribute + "Description"
@@ -146,7 +146,7 @@ def update_graph(frame, monthly_averages):
     
 def get_location_coords(location_id):
     '''Return all coordinates of a location from its ID (latitude, longitude) as a dataframe.'''
-    url = 'https://data.chesapeakebay.net/api.JSON/' + section + '/Station/' + geographical_attribute + '/' + str(location_id)
+    url = 'https://datahub.chesapeakebay.net/api.JSON/' + section + '/Station/' + geographical_attribute + '/' + str(location_id)
     all_location_coords = requests.get(url)
     all_location_coords_data = json.loads(all_location_coords.text)
     # Get coordinates from each location
